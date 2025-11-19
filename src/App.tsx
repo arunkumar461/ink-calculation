@@ -10,20 +10,23 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [numKeys, setNumKeys] = useState(34);
   const [blackGen, setBlackGen] = useState(0.7);
+  const [rotation, setRotation] = useState(0);
+  const [showOverlay, setShowOverlay] = useState(true);
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
       setImage(url);
-      processUploadedImage(url, numKeys, blackGen);
+      setRotation(0); // Reset rotation on new file
+      processUploadedImage(url, numKeys, blackGen, 0);
     }
   }, [numKeys, blackGen]);
 
-  const processUploadedImage = async (url: string, keys: number, bg: number) => {
+  const processUploadedImage = async (url: string, keys: number, bg: number, rot: number) => {
     setIsProcessing(true);
     try {
-      const results = await processImage(url, { numKeys: keys, blackGeneration: bg });
+      const results = await processImage(url, { numKeys: keys, blackGeneration: bg, rotation: rot });
       setInkLevels(results);
     } catch (error) {
       console.error("Error processing image:", error);
@@ -35,7 +38,15 @@ function App() {
 
   const handleReProcess = () => {
     if (image) {
-      processUploadedImage(image, numKeys, blackGen);
+      processUploadedImage(image, numKeys, blackGen, rotation);
+    }
+  };
+
+  const rotateImage = () => {
+    const newRotation = (rotation + 90) % 360;
+    setRotation(newRotation);
+    if (image) {
+      processUploadedImage(image, numKeys, blackGen, newRotation);
     }
   };
 
@@ -68,9 +79,41 @@ function App() {
               <Upload size={18} /> Input Source
             </h2>
 
-            <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors relative overflow-hidden">
+            <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors relative overflow-hidden bg-gray-100">
               {image ? (
-                <img src={image} alt="Preview" className="absolute inset-0 w-full h-full object-contain p-2" />
+                <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+                  <img
+                    src={image}
+                    alt="Preview"
+                    className="max-w-full max-h-full object-contain transition-transform duration-300"
+                    style={{ transform: `rotate(${rotation}deg)` }}
+                  />
+                  {/* Grid Overlay */}
+                  {showOverlay && (
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        transform: `rotate(${rotation}deg)`,
+                        // We need the grid to match the image aspect ratio and size. 
+                        // This is tricky with CSS only. For now, let's just show a generic grid 
+                        // or we can rely on the fact that the user needs to see the ZONES.
+                        // A simple CSS grid might not align perfectly with the image content if object-contain leaves gaps.
+                        // Better approach: Render the grid INSIDE the image container if possible, 
+                        // but for now let's just show a warning or simple lines if it fills the area.
+                      }}
+                    >
+                      {/* 
+                          To do this perfectly, we'd need to know the rendered dimensions of the image.
+                          For this MVP, let's just rely on the rotation feature and add the overlay 
+                          toggle as a concept, but maybe implement it simply as "Vertical Lines" 
+                          that might not perfectly align with the scaled image in CSS.
+                          
+                          Actually, let's skip the complex CSS overlay for this step and focus on Rotation 
+                          which is the critical part for "Alignment".
+                       */}
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="flex flex-col items-center justify-center pt-5 pb-6 text-gray-400">
                   <Upload size={32} className="mb-2" />
@@ -80,6 +123,17 @@ function App() {
               )}
               <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
             </label>
+
+            {image && (
+              <div className="mt-4 flex gap-2">
+                <button
+                  onClick={(e) => { e.preventDefault(); rotateImage(); }}
+                  className="flex-1 bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md text-sm font-medium hover:bg-gray-50 flex items-center justify-center gap-2"
+                >
+                  <Settings size={14} className="rotate-45" /> Rotate 90°
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Settings Card */}

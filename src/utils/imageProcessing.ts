@@ -9,6 +9,7 @@ export interface InkLevels {
 export interface ProcessImageOptions {
   numKeys: number;
   blackGeneration: number; // 0 to 1, controls GCR
+  rotation: number; // 0, 90, 180, 270
 }
 
 /**
@@ -59,16 +60,30 @@ export const processImage = (
       const scale = processWidth / img.width;
       const processHeight = Math.round(img.height * scale);
 
-      canvas.width = processWidth;
-      canvas.height = processHeight;
+      // Handle Rotation
+      let finalWidth = processWidth;
+      let finalHeight = processHeight;
 
-      // Draw image to canvas
-      ctx.drawImage(img, 0, 0, processWidth, processHeight);
+      if (options.rotation === 90 || options.rotation === 270) {
+        canvas.width = processHeight;
+        canvas.height = processWidth;
+        finalWidth = processHeight;
+        finalHeight = processWidth;
+      } else {
+        canvas.width = processWidth;
+        canvas.height = processHeight;
+      }
 
-      const imageData = ctx.getImageData(0, 0, processWidth, processHeight);
+      ctx.save();
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate((options.rotation * Math.PI) / 180);
+      ctx.drawImage(img, -processWidth / 2, -processHeight / 2, processWidth, processHeight);
+      ctx.restore();
+
+      const imageData = ctx.getImageData(0, 0, finalWidth, finalHeight);
       const data = imageData.data;
 
-      const zoneWidth = processWidth / options.numKeys;
+      const zoneWidth = finalWidth / options.numKeys;
 
       // Initialize accumulators
       const cLevels = new Float32Array(options.numKeys);
@@ -78,9 +93,9 @@ export const processImage = (
       const pixelCounts = new Float32Array(options.numKeys);
 
       // Iterate through all pixels
-      for (let y = 0; y < processHeight; y++) {
-        for (let x = 0; x < processWidth; x++) {
-          const i = (y * processWidth + x) * 4;
+      for (let y = 0; y < finalHeight; y++) {
+        for (let x = 0; x < finalWidth; x++) {
+          const i = (y * finalWidth + x) * 4;
           const r = data[i];
           const g = data[i + 1];
           const b = data[i + 2];
