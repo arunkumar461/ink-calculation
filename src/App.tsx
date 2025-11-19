@@ -11,6 +11,8 @@ function App() {
   const [numKeys, setNumKeys] = useState(34);
   const [blackGen, setBlackGen] = useState(0.7);
   const [rotation, setRotation] = useState(0);
+  const [plateWidth, setPlateWidth] = useState(1030); // mm
+  const [imageWidth, setImageWidth] = useState(600); // mm
   const [showOverlay, setShowOverlay] = useState(true);
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -19,14 +21,22 @@ function App() {
       const url = URL.createObjectURL(file);
       setImage(url);
       setRotation(0); // Reset rotation on new file
-      processUploadedImage(url, numKeys, blackGen, 0);
+      // Reset image width to something reasonable or keep previous? 
+      // Let's keep previous for now, or maybe default to half plate?
+      processUploadedImage(url, numKeys, blackGen, 0, plateWidth, imageWidth);
     }
-  }, [numKeys, blackGen]);
+  }, [numKeys, blackGen, plateWidth, imageWidth]);
 
-  const processUploadedImage = async (url: string, keys: number, bg: number, rot: number) => {
+  const processUploadedImage = async (url: string, keys: number, bg: number, rot: number, pWidth: number, iWidth: number) => {
     setIsProcessing(true);
     try {
-      const results = await processImage(url, { numKeys: keys, blackGeneration: bg, rotation: rot });
+      const results = await processImage(url, {
+        numKeys: keys,
+        blackGeneration: bg,
+        rotation: rot,
+        plateWidth: pWidth,
+        imageWidth: iWidth
+      });
       setInkLevels(results);
     } catch (error) {
       console.error("Error processing image:", error);
@@ -38,7 +48,7 @@ function App() {
 
   const handleReProcess = () => {
     if (image) {
-      processUploadedImage(image, numKeys, blackGen, rotation);
+      processUploadedImage(image, numKeys, blackGen, rotation, plateWidth, imageWidth);
     }
   };
 
@@ -46,7 +56,7 @@ function App() {
     const newRotation = (rotation + 90) % 360;
     setRotation(newRotation);
     if (image) {
-      processUploadedImage(image, numKeys, blackGen, newRotation);
+      processUploadedImage(image, numKeys, blackGen, newRotation, plateWidth, imageWidth);
     }
   };
 
@@ -153,6 +163,31 @@ function App() {
                   onChange={(e) => setNumKeys(Number(e.target.value))}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Plate Width (mm)
+                </label>
+                <input
+                  type="number"
+                  value={plateWidth}
+                  onChange={(e) => setPlateWidth(Number(e.target.value))}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Image Width (mm)
+                </label>
+                <input
+                  type="number"
+                  value={imageWidth}
+                  onChange={(e) => setImageWidth(Number(e.target.value))}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">The physical width of the printed area.</p>
               </div>
 
               <div>

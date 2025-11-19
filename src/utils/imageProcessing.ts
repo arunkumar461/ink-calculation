@@ -8,8 +8,10 @@ export interface InkLevels {
 
 export interface ProcessImageOptions {
   numKeys: number;
-  blackGeneration: number; // 0 to 1, controls GCR
+  blackGeneration: number; // 0 to 1
   rotation: number; // 0, 90, 180, 270
+  plateWidth: number; // e.g. 1030 mm
+  imageWidth: number; // e.g. 600 mm
 }
 
 /**
@@ -80,10 +82,49 @@ export const processImage = (
       ctx.drawImage(img, -processWidth / 2, -processHeight / 2, processWidth, processHeight);
       ctx.restore();
 
-      const imageData = ctx.getImageData(0, 0, finalWidth, finalHeight);
-      const data = imageData.data;
+      // --- PLATE MOUNTING LOGIC ---
+      // 1. Determine the pixel-to-physical ratio based on the image's intended physical width
+      // finalWidth is the pixel width of the rotated image
+      const pixelsPerUnit = finalWidth / options.imageWidth;
 
-      const zoneWidth = finalWidth / options.numKeys;
+      // 2. Calculate Plate dimensions in pixels
+      const plateWidthPx = Math.round(options.plateWidth * pixelsPerUnit);
+      // Plate height isn't strictly defined by inputs, but we need enough to hold the image.
+      // Let's make the plate canvas the same height as the image (plus padding if we wanted, but vertical position doesn't affect ink keys much unless we did vertical segmentation).
+      // Actually, for "Center Bottom", we just need to place it horizontally correct.
+      // Vertical placement doesn't change the *vertical column* sum. 
+      // So we can just create a canvas of `plateWidthPx` width and `finalHeight` height.
+      // And draw the image at the correct X offset.
+
+      const plateCanvas = document.createElement('canvas');
+      plateCanvas.width = plateWidthPx;
+      plateCanvas.height = finalHeight;
+      const plateCtx = plateCanvas.getContext('2d');
+
+      if (!plateCtx) {
+        reject(new Error("Could not get plate canvas context"));
+        return;
+      }
+
+      // Fill with white (0 ink)
+      plateCtx.fillStyle = '#FFFFFF';
+      plateCtx.fillRect(0, 0, plateWidthPx, finalHeight);
+
+      // Calculate X offset to center the image
+      const xOffset = (plateWidthPx - finalWidth) / 2;
+
+      // Draw the rotated image onto the plate canvas
+      // We need to draw the *rotated* version we just calculated.
+      // Since we already have `imageData` of the rotated image, let's put that on a temp canvas first or just use putImageData
+      // But putImageData ignores globalCompositeOperation if we needed it. 
+      // Simpler: We already have the rotated image drawn on `canvas`.
+
+      plateCtx.drawImage(canvas, xOffset, 0);
+
+      // Now we analyze the PLATE canvas
+      const finalData = plateCtx.getImageData(0, 0, plateWidthPx, finalHeight).data;
+
+      const zoneWidth = plateWidthPx / options.numKeys;
 
       // Initialize accumulators
       const cLevels = new Float32Array(options.numKeys);
@@ -92,21 +133,21 @@ export const processImage = (
       const kLevels = new Float32Array(options.numKeys);
       const pixelCounts = new Float32Array(options.numKeys);
 
-      // Iterate through all pixels
+      // Iterate through all pixels of the PLATE
       for (let y = 0; y < finalHeight; y++) {
-        for (let x = 0; x < finalWidth; x++) {
-          const i = (y * finalWidth + x) * 4;
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          // alpha = data[i+3] - ignored for now, assuming white background if transparent?
-          // Actually, if transparent, we should probably treat as white (0 ink).
-          const a = data[i + 3];
+        for (let x = 0; x < plateWidthPx; x++) {
+          const i = (y * plateWidthPx + x) * 4;
+          const r = finalData[i];
+          const g = finalData[i + 1];
+          const b = finalData[i + 2];
+          // Treat transparent as white
+          const a = finalData[i + 3];
 
-          if (a < 10) continue; // Skip transparent pixels
-
-          // Blend with white background if semi-transparent
-          // Simple approximation: just use the RGB values as is if opaque
+          if (a < 10) {
+            // Transparent = No Ink. 
+            // rgbToCmyk(255,255,255) -> 0,0,0,0
+            // So let's just process it as white.
+          }
 
           const cmyk = rgbToCmyk(r, g, b, options.blackGeneration);
 
