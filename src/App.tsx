@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Upload, Settings, Printer, AlertCircle } from 'lucide-react';
 import { processImage, InkLevels } from './utils/imageProcessing';
 import { InkZoneChart } from './components/InkZoneChart';
@@ -18,16 +18,25 @@ function App() {
   const [printWidthInch, setPrintWidthInch] = useState<number>(40); // Default to full width
   const [showOverlay, setShowOverlay] = useState(true);
 
+  // Auto-process when settings change
+  useEffect(() => {
+    if (image) {
+      const timeoutId = setTimeout(() => {
+        processUploadedImage(image, numKeys, blackGen, rotation, printWidthInch);
+      }, 500); // Debounce slightly to avoid rapid re-calc on slider drag
+      return () => clearTimeout(timeoutId);
+    }
+  }, [image, numKeys, blackGen, rotation, printWidthInch]);
+
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
       setImage(url);
       setRotation(0); // Reset rotation on new file
-      // Process with default full width
-      processUploadedImage(url, numKeys, blackGen, 0, printWidthInch);
+      // Effect will trigger processing
     }
-  }, [numKeys, blackGen, printWidthInch]);
+  }, []);
 
   const processUploadedImage = async (url: string, keys: number, bg: number, rot: number, widthInch: number) => {
     setIsProcessing(true);
@@ -217,16 +226,21 @@ function App() {
               <div className="absolute top-0 bottom-0 left-1/2 w-px bg-red-400 opacity-50 z-10"></div>
 
               {image ? (
-                <img
-                  src={image}
-                  alt="Print Job"
-                  className="origin-bottom transition-transform duration-300 shadow-md bg-white z-0"
-                  style={{
-                    transform: `rotate(${rotation}deg)`,
-                    width: `${(printWidthInch / 40.5) * 100}%`,
-                    maxHeight: '90%'
-                  }}
-                />
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <img
+                    src={image}
+                    alt="Print Job"
+                    className="transition-transform duration-300 shadow-md bg-white z-0"
+                    style={{
+                      transform: `rotate(${rotation}deg)`,
+                      width: `${(printWidthInch / 40.5) * 100}%`,
+                      // When rotated, we need to ensure it doesn't overflow visually if it's too tall.
+                      // But for accurate "Plate relative" sizing, width is key.
+                      // We remove maxHeight constraint to let it be true to size relative to plate width,
+                      // assuming the Plate Aspect Ratio container helps.
+                    }}
+                  />
+                </div>
               ) : (
                 <div className="text-gray-400 font-medium">No Job Loaded</div>
               )}

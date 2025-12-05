@@ -8,9 +8,9 @@ interface InkZoneChartProps {
 }
 
 const colorMap = {
-  c: 'bg-cyan-500',
-  m: 'bg-magenta-500',
-  y: 'bg-yellow-500',
+  c: 'bg-cyan',
+  m: 'bg-magenta',
+  y: 'bg-yellow',
   k: 'bg-black',
 };
 
@@ -25,7 +25,7 @@ export const InkZoneChart: React.FC<InkZoneChartProps> = ({ color, data, height 
   return (
     <div className="w-full">
       <div className="flex items-center gap-2 mb-1">
-        <span className={`text-xs font-bold uppercase w-8 ${color === 'c' ? 'text-cyan-600' : color === 'm' ? 'text-magenta-600' : color === 'y' ? 'text-yellow-600' : 'text-black'}`}>
+        <span className={`text-xs font-bold uppercase w-8 ${color === 'c' ? 'text-cyan-dim' : color === 'm' ? 'text-magenta-dim' : color === 'y' ? 'text-yellow-dim' : 'text-black'}`}>
           {labelMap[color]}
         </span>
         <div className="flex-1 h-px bg-gray-200"></div>
@@ -58,4 +58,3 @@ export const InkZoneChart: React.FC<InkZoneChartProps> = ({ color, data, height 
     </div>
   );
 };
-
