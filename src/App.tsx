@@ -12,10 +12,9 @@ function App() {
   const [blackGen, setBlackGen] = useState(0.7);
 
   const [rotation, setRotation] = useState(0);
-  // Standard Komori Lithrone 40" plate is approx 40 inches wide.
-  // We keep the internal logic in inches or mm? Let's stick to mm for processing but UI in inches.
-  // 40 inches = 1016 mm.
-  const PLATE_WIDTH_MM = 1016;
+  // Standard Komori Lithrone 40" plate is approx 40.5 inches wide.
+  // 40.5 inches = 1028.7 mm -> ~1029 mm.
+  const PLATE_WIDTH_MM = 1029;
   const [printWidthInch, setPrintWidthInch] = useState<number>(40); // Default to full width
   const [showOverlay, setShowOverlay] = useState(true);
 
@@ -94,7 +93,7 @@ function App() {
 
             {/* Plate Visualizer */}
             <div className="bg-gray-800 rounded p-1 mb-4 relative shadow-inner">
-              <div className="text-[10px] text-gray-400 text-center mb-1">Plate: 40" x 28"</div>
+              <div className="text-[10px] text-gray-400 text-center mb-1">Plate: 40.5" x 28" (Komori)</div>
               <label className="flex flex-col items-center justify-end w-full h-48 border-2 border-dashed border-gray-600 rounded bg-gray-700 cursor-pointer hover:bg-gray-600 transition-colors relative overflow-hidden">
                 {image ? (
                   <div className="relative w-full h-full flex items-end justify-center overflow-hidden pb-1">
