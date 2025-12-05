@@ -40,14 +40,18 @@ export const InkZoneChart: React.FC<InkZoneChartProps> = ({ color, data, height 
         </div>
 
         {data.map((value, idx) => (
-          <div key={idx} className="flex-1 flex flex-col justify-end group relative h-full border-r border-gray-100 last:border-r-0">
-            {/* Value Text on top of bar if high enough, else above */}
-            <div className="w-full text-center mb-0.5">
-              <span className="text-[9px] text-gray-600 font-medium block -rotate-90 origin-bottom translate-y-2">{value > 0 ? value : ''}</span>
-            </div>
+          <div key={idx} className="flex-1 flex flex-col justify-end relative h-full border-r border-gray-100 last:border-r-0 group">
+            {/* Value Text - Always visible, Vertical */}
+            {value > 0 && (
+              <div className="absolute w-full flex justify-center pointer-events-none" style={{ bottom: `${Math.max(value, 15)}%`, marginBottom: '2px' }}>
+                <span className="text-[9px] text-gray-700 font-bold -rotate-90 origin-bottom whitespace-nowrap">
+                  {value}
+                </span>
+              </div>
+            )}
 
             <div
-              className={`w-full ${colorMap[color]} transition-all duration-300 opacity-90 hover:opacity-100`}
+              className={`w-full ${colorMap[color]} transition-all duration-300 opacity-90 group-hover:opacity-100`}
               style={{ height: `${value}%` }}
             ></div>
 
