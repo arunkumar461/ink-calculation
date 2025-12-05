@@ -10,9 +10,13 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [numKeys, setNumKeys] = useState(34);
   const [blackGen, setBlackGen] = useState(0.7);
+
   const [rotation, setRotation] = useState(0);
-  const [plateWidth, setPlateWidth] = useState(1030); // mm
-  const [imageWidth, setImageWidth] = useState(600); // mm
+  // Standard Komori Lithrone 40" plate is approx 40 inches wide.
+  // We keep the internal logic in inches or mm? Let's stick to mm for processing but UI in inches.
+  // 40 inches = 1016 mm.
+  const PLATE_WIDTH_MM = 1016;
+  const [printWidthInch, setPrintWidthInch] = useState<number>(40); // Default to full width
   const [showOverlay, setShowOverlay] = useState(true);
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -21,21 +25,20 @@ function App() {
       const url = URL.createObjectURL(file);
       setImage(url);
       setRotation(0); // Reset rotation on new file
-      // Reset image width to something reasonable or keep previous? 
-      // Let's keep previous for now, or maybe default to half plate?
-      processUploadedImage(url, numKeys, blackGen, 0, plateWidth, imageWidth);
+      // Process with default full width
+      processUploadedImage(url, numKeys, blackGen, 0, printWidthInch);
     }
-  }, [numKeys, blackGen, plateWidth, imageWidth]);
+  }, [numKeys, blackGen, printWidthInch]);
 
-  const processUploadedImage = async (url: string, keys: number, bg: number, rot: number, pWidth: number, iWidth: number) => {
+  const processUploadedImage = async (url: string, keys: number, bg: number, rot: number, widthInch: number) => {
     setIsProcessing(true);
     try {
       const results = await processImage(url, {
         numKeys: keys,
         blackGeneration: bg,
         rotation: rot,
-        plateWidth: pWidth,
-        imageWidth: iWidth
+        plateWidth: PLATE_WIDTH_MM,
+        imageWidth: widthInch * 25.4 // Convert inches to mm
       });
       setInkLevels(results);
     } catch (error) {
@@ -48,7 +51,7 @@ function App() {
 
   const handleReProcess = () => {
     if (image) {
-      processUploadedImage(image, numKeys, blackGen, rotation, plateWidth, imageWidth);
+      processUploadedImage(image, numKeys, blackGen, rotation, printWidthInch);
     }
   };
 
@@ -56,7 +59,7 @@ function App() {
     const newRotation = (rotation + 90) % 360;
     setRotation(newRotation);
     if (image) {
-      processUploadedImage(image, numKeys, blackGen, newRotation, plateWidth, imageWidth);
+      processUploadedImage(image, numKeys, blackGen, newRotation, printWidthInch);
     }
   };
 
@@ -86,53 +89,36 @@ function App() {
           {/* Upload Card */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 className="font-semibold mb-4 flex items-center gap-2">
-              <Upload size={18} /> Input Source
+              <Upload size={18} /> Plate Simulation
             </h2>
 
-            <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors relative overflow-hidden bg-gray-100">
-              {image ? (
-                <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-                  <img
-                    src={image}
-                    alt="Preview"
-                    className="max-w-full max-h-full object-contain transition-transform duration-300"
-                    style={{ transform: `rotate(${rotation}deg)` }}
-                  />
-                  {/* Grid Overlay */}
-                  {showOverlay && (
-                    <div
-                      className="absolute inset-0 pointer-events-none"
+            {/* Plate Visualizer */}
+            <div className="bg-gray-800 rounded p-1 mb-4 relative shadow-inner">
+              <div className="text-[10px] text-gray-400 text-center mb-1">Plate: 40" x 28"</div>
+              <label className="flex flex-col items-center justify-end w-full h-48 border-2 border-dashed border-gray-600 rounded bg-gray-700 cursor-pointer hover:bg-gray-600 transition-colors relative overflow-hidden">
+                {image ? (
+                  <div className="relative w-full h-full flex items-end justify-center overflow-hidden pb-1">
+                    {/* The Image representing the paper/print */}
+                    <img
+                      src={image}
+                      alt="Preview"
+                      className="object-contain transition-transform duration-300 shadow-xl bg-white"
                       style={{
                         transform: `rotate(${rotation}deg)`,
-                        // We need the grid to match the image aspect ratio and size. 
-                        // This is tricky with CSS only. For now, let's just show a generic grid 
-                        // or we can rely on the fact that the user needs to see the ZONES.
-                        // A simple CSS grid might not align perfectly with the image content if object-contain leaves gaps.
-                        // Better approach: Render the grid INSIDE the image container if possible, 
-                        // but for now let's just show a warning or simple lines if it fills the area.
+                        width: `${(printWidthInch / 40) * 100}%`, // Relative width to plate
+                        maxHeight: '90%'
                       }}
-                    >
-                      {/* 
-                          To do this perfectly, we'd need to know the rendered dimensions of the image.
-                          For this MVP, let's just rely on the rotation feature and add the overlay 
-                          toggle as a concept, but maybe implement it simply as "Vertical Lines" 
-                          that might not perfectly align with the scaled image in CSS.
-                          
-                          Actually, let's skip the complex CSS overlay for this step and focus on Rotation 
-                          which is the critical part for "Alignment".
-                       */}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center pt-5 pb-6 text-gray-400">
-                  <Upload size={32} className="mb-2" />
-                  <p className="text-sm">Click or drag file to upload</p>
-                  <p className="text-xs mt-1">JPG, PNG supported</p>
-                </div>
-              )}
-              <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
-            </label>
+                    />
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6 text-gray-400 h-full">
+                    <Upload size={32} className="mb-2" />
+                    <p className="text-sm">Click to Mount Image</p>
+                  </div>
+                )}
+                <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+              </label>
+            </div>
 
             {image && (
               <div className="mt-4 flex gap-2">
@@ -167,27 +153,29 @@ function App() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Plate Width (mm)
+                  Print Width (Inches)
                 </label>
-                <input
-                  type="number"
-                  value={plateWidth}
-                  onChange={(e) => setPlateWidth(Number(e.target.value))}
+                <select
+                  value={printWidthInch}
+                  onChange={(e) => setPrintWidthInch(Number(e.target.value))}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Image Width (mm)
-                </label>
-                <input
-                  type="number"
-                  value={imageWidth}
-                  onChange={(e) => setImageWidth(Number(e.target.value))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-                <p className="text-xs text-gray-500 mt-1">The physical width of the printed area.</p>
+                >
+                  <option value={40}>Full Plate (40")</option>
+                  <option value={32}>Large Sheet (32")</option>
+                  <option value={20}>Half Sheet (20")</option>
+                  <option value={19}>19 inches</option>
+                  <option value={11.7}>A3 Landscape (16.5")</option>
+                  <option value={8.3}>A4 Landscape (11.7")</option>
+                </select>
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={printWidthInch}
+                    onChange={(e) => setPrintWidthInch(Number(e.target.value))}
+                    className="w-20 text-sm border border-gray-300 rounded px-2 py-1"
+                  />
+                  <span className="text-sm text-gray-500">Custom "</span>
+                </div>
               </div>
 
               <div>
