@@ -21,38 +21,41 @@ const labelMap = {
   k: 'Black',
 };
 
-export const InkZoneChart: React.FC<InkZoneChartProps> = ({ color, data, height = 150 }) => {
+export const InkZoneChart: React.FC<InkZoneChartProps> = ({ color, data, height = 120 }) => {
   return (
-    <div className="w-full mb-6">
-      <div className="flex items-center justify-between mb-1">
-        <span className="font-bold text-sm uppercase text-gray-600">{labelMap[color]}</span>
-        <span className="text-xs text-gray-400">Max: {Math.max(...data)}%</span>
+    <div className="w-full">
+      <div className="flex items-center gap-2 mb-1">
+        <span className={`text-xs font-bold uppercase w-8 ${color === 'c' ? 'text-cyan-600' : color === 'm' ? 'text-magenta-600' : color === 'y' ? 'text-yellow-600' : 'text-black'}`}>
+          {labelMap[color]}
+        </span>
+        <div className="flex-1 h-px bg-gray-200"></div>
       </div>
-      <div className="relative w-full border-b border-gray-300 flex items-end gap-[1px]" style={{ height: `${height}px` }}>
-        {/* Grid lines */}
-        <div className="absolute inset-0 pointer-events-none flex flex-col justify-between">
-          {[100, 75, 50, 25, 0].map((val) => (
-            <div key={val} className="w-full border-t border-gray-100 text-[10px] text-gray-300 relative">
-              <span className="absolute -top-2 -left-6">{val}</span>
-            </div>
+
+      <div className="relative w-full border-b border-gray-400 flex items-end" style={{ height: `${height}px` }}>
+        {/* Horizontal Guidelines */}
+        <div className="absolute inset-0 pointer-events-none flex flex-col justify-between opacity-30">
+          {[100, 50, 0].map((val) => (
+            <div key={val} className="w-full border-t border-gray-400 text-[9px] text-gray-500 relative"></div>
           ))}
         </div>
 
         {data.map((value, idx) => (
-          <div key={idx} className="flex-1 flex flex-col justify-end group relative h-full">
-            <div
-              className={`w-full ${colorMap[color]} transition-all duration-500 ease-out hover:opacity-80`}
-              style={{ height: `${value}%` }}
-            >
-              {/* Tooltip */}
-              <div className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-gray-800 text-white text-xs py-1 px-2 rounded pointer-events-none z-10 whitespace-nowrap">
-                Key {idx + 1}: {value}%
-              </div>
+          <div key={idx} className="flex-1 flex flex-col justify-end group relative h-full border-r border-gray-100 last:border-r-0">
+            {/* Value Text on top of bar if high enough, else above */}
+            <div className="w-full text-center mb-0.5">
+              <span className="text-[9px] text-gray-600 font-medium block -rotate-90 origin-bottom translate-y-2">{value > 0 ? value : ''}</span>
             </div>
-            <div className="text-[8px] text-center text-gray-400 mt-1 hidden sm:block">{idx + 1}</div>
+
+            <div
+              className={`w-full ${colorMap[color]} transition-all duration-300 opacity-90 hover:opacity-100`}
+              style={{ height: `${value}%` }}
+            ></div>
+
+            <div className="text-[8px] text-center text-gray-400 mt-0.5 border-t border-gray-200 pt-0.5">{idx + 1}</div>
           </div>
         ))}
       </div>
     </div>
   );
 };
+

@@ -85,51 +85,30 @@ function App() {
         {/* Left Sidebar: Controls & Preview */}
         <div className="lg:col-span-1 space-y-6">
 
-          {/* Upload Card */}
+          {/* Controls */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 className="font-semibold mb-4 flex items-center gap-2">
-              <Upload size={18} /> Plate Simulation
+              <Upload size={18} /> Controls
             </h2>
 
-            {/* Plate Visualizer */}
-            <div className="bg-gray-800 rounded p-1 mb-4 relative shadow-inner">
-              <div className="text-[10px] text-gray-400 text-center mb-1">Plate: 40.5" x 28" (Komori)</div>
-              <label className="flex flex-col items-center justify-end w-full h-48 border-2 border-dashed border-gray-600 rounded bg-gray-700 cursor-pointer hover:bg-gray-600 transition-colors relative overflow-hidden">
-                {image ? (
-                  <div className="relative w-full h-full flex items-end justify-center overflow-hidden pb-1">
-                    {/* The Image representing the paper/print */}
-                    <img
-                      src={image}
-                      alt="Preview"
-                      className="object-contain transition-transform duration-300 shadow-xl bg-white"
-                      style={{
-                        transform: `rotate(${rotation}deg)`,
-                        width: `${(printWidthInch / 40) * 100}%`, // Relative width to plate
-                        maxHeight: '90%'
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6 text-gray-400 h-full">
-                    <Upload size={32} className="mb-2" />
-                    <p className="text-sm">Click to Mount Image</p>
-                  </div>
-                )}
-                <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
-              </label>
-            </div>
+            <label className="block w-full text-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors p-4 mb-4">
+              <div className="flex flex-col items-center justify-center text-gray-500">
+                <Upload size={32} className="mb-2" />
+                <span className="text-sm">{image ? 'Change Image' : 'Upload Image'}</span>
+              </div>
+              <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+            </label>
 
             {image && (
-              <div className="mt-4 flex gap-2">
-                <button
-                  onClick={(e) => { e.preventDefault(); rotateImage(); }}
-                  className="flex-1 bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md text-sm font-medium hover:bg-gray-50 flex items-center justify-center gap-2"
-                >
-                  <Settings size={14} className="rotate-45" /> Rotate 90°
-                </button>
-              </div>
+              <button
+                onClick={(e) => { e.preventDefault(); rotateImage(); }}
+                className="w-full mb-4 bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md text-sm font-medium hover:bg-gray-50 flex items-center justify-center gap-2"
+              >
+                <Settings size={14} className="rotate-45" /> Rotate 90°
+              </button>
             )}
           </div>
+
 
           {/* Settings Card */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -217,56 +196,59 @@ function App() {
 
         </div>
 
-        {/* Right Content: Charts */}
-        <div className="lg:col-span-2 space-y-6">
-          {inkLevels ? (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-semibold mb-6 text-lg">Ink Coverage Analysis</h2>
+        {/* Right Content: Report View */}
+        <div className="lg:col-span-2 space-y-8">
 
-              <InkZoneChart color="c" data={inkLevels.c} />
-              <InkZoneChart color="m" data={inkLevels.m} />
-              <InkZoneChart color="y" data={inkLevels.y} />
-              <InkZoneChart color="k" data={inkLevels.k} />
-
-              <div className="mt-8 grid grid-cols-4 gap-4 text-center border-t pt-6">
-                <div>
-                  <div className="text-2xl font-bold text-cyan-600">
-                    {Math.round(inkLevels.c.reduce((a, b) => a + b, 0) / numKeys)}%
-                  </div>
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">Cyan Avg</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-magenta-600">
-                    {Math.round(inkLevels.m.reduce((a, b) => a + b, 0) / numKeys)}%
-                  </div>
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">Magenta Avg</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-yellow-600">
-                    {Math.round(inkLevels.y.reduce((a, b) => a + b, 0) / numKeys)}%
-                  </div>
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">Yellow Avg</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-gray-800">
-                    {Math.round(inkLevels.k.reduce((a, b) => a + b, 0) / numKeys)}%
-                  </div>
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">Black Avg</div>
-                </div>
+          {/* Main Paper/Plate View using standard width alignment */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <div className="flex justify-between items-end mb-2 border-b pb-2">
+              <div>
+                <h2 className="text-lg font-bold">Job Visualization</h2>
+                <p className="text-xs text-gray-500">Plate: 40.5" x 28" | Paper: {printWidthInch}" width</p>
               </div>
-
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 flex flex-col items-center justify-center text-center h-full min-h-[400px]">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <Printer className="text-gray-400" size={32} />
+              <div className="text-right">
+                <div className="text-xs font-bold text-gray-600 uppercase tracking-tighter">Measurement: Reading</div>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Ready to Calculate</h3>
-              <p className="text-gray-500 max-w-md">
-                Upload a print layout image to analyze ink coverage and generate key zone presets.
-              </p>
             </div>
-          )}
+
+            {/* Plate Rectangle */}
+            <div className="w-full bg-gray-100 border border-gray-300 relative aspect-[1.45/1] flex items-end justify-center mb-6 overflow-hidden">
+              {/* Center marker */}
+              <div className="absolute top-0 bottom-0 left-1/2 w-px bg-red-400 opacity-50 z-10"></div>
+
+              {image ? (
+                <img
+                  src={image}
+                  alt="Print Job"
+                  className="origin-bottom transition-transform duration-300 shadow-md bg-white z-0"
+                  style={{
+                    transform: `rotate(${rotation}deg)`,
+                    width: `${(printWidthInch / 40.5) * 100}%`,
+                    maxHeight: '90%'
+                  }}
+                />
+              ) : (
+                <div className="text-gray-400 font-medium">No Job Loaded</div>
+              )}
+
+              {/* Zone Grid Overlay */}
+              <div className="absolute inset-0 flex pointer-events-none">
+                {[...Array(numKeys)].map((_, i) => (
+                  <div key={i} className="flex-1 border-r border-gray-300 last:border-r-0 opacity-20"></div>
+                ))}
+              </div>
+            </div>
+
+            {/* Stacking Charts */}
+            {inkLevels && (
+              <div className="space-y-4">
+                <InkZoneChart color="c" data={inkLevels.c} />
+                <InkZoneChart color="m" data={inkLevels.m} />
+                <InkZoneChart color="y" data={inkLevels.y} />
+                <InkZoneChart color="k" data={inkLevels.k} />
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>
