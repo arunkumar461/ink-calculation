@@ -16,7 +16,7 @@ function App() {
   // 40.5 inches = 1028.7 mm -> ~1029 mm.
   const PLATE_WIDTH_MM = 1029;
   const [printWidthInch, setPrintWidthInch] = useState<number>(40); // Default to full width
-  const [showOverlay, setShowOverlay] = useState(true);
+
 
   // Auto-process when settings change
   useEffect(() => {
